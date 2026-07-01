@@ -1,0 +1,7 @@
+nbformat
+markdownify
+beautifulsoup4
+pandas
+lxml
+html5lib
+tabulate
