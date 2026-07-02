@@ -54,11 +54,41 @@ ipynb2md "D:\path\to\notebook.ipynb" --html-policy auto
 ipynb2md "D:\path\to\notebook.ipynb" --no-outputs
 ipynb2md "D:\path\to\notebook.ipynb" --include-execution-count
 ipynb2md "D:\path\to\notebook.ipynb" --cell-separators
+ipynb2md "D:\path\to\notebook.ipynb" --output-style plain
 ```
 
 If no output path is given, the Markdown file is written next to the input notebook with the same base name. Existing Markdown files are overwritten by default. Use `--no-overwrite` to fail instead.
 
 如果不指定输出路径，默认在输入 notebook 同目录生成同名 `.md`。默认覆盖已有 Markdown；如需禁止覆盖，请使用 `--no-overwrite`。
+
+## Output Style / 输出样式
+
+By default, code cell outputs are wrapped in an Obsidian callout:
+
+默认情况下，code cell 的输出会包裹在 Obsidian callout 中：
+
+````markdown
+> [!nb-output] Output
+> ```text
+> hello
+> ```
+````
+
+This makes rendered outputs visibly different from author-written notebook Markdown cells. The callout wrapper applies uniformly to stream output, tracebacks, plain text, JSON, images, `text/markdown`, LaTeX, HTML tables converted to Markdown, and HTML/JSON asset links. Empty lines inside the output are also quoted so the callout does not end early.
+
+这样可以让运行结果与 notebook 作者手写的 Markdown 单元格明显区分。这个 callout 会统一包裹 stream、traceback、plain text、JSON、图片、`text/markdown`、LaTeX、HTML 转成的 Markdown 表格，以及 HTML/JSON 附件链接。输出内部的空行也会带 `>`，避免 callout 提前结束。
+
+Use `--output-style plain` to keep the old layout without callouts:
+
+如果需要旧版行为，可以使用 `--output-style plain`：
+
+```powershell
+ipynb2md "D:\path\to\notebook.ipynb" --output-style plain
+```
+
+In Obsidian, `[!nb-output]` renders as a callout. In renderers that do not support Obsidian callouts, such as GitHub, it degrades to a normal blockquote and remains visually distinguishable.
+
+在 Obsidian 中，`[!nb-output]` 会渲染为 callout；在 GitHub 等不支持 Obsidian callout 的渲染器中，它会退化为普通 blockquote，但仍然能区分运行输出和手写笔记。
 
 ## Output Structure / 输出结构
 

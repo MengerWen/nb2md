@@ -87,6 +87,7 @@ class Config:
     html_policy: str = "auto"
     image_policy: str = "save"
     table_policy: str = "auto"
+    output_style: str = "callout"
     overwrite: bool = True
     strict_mode: bool = False
     prefer_mime_order: list[str] = field(
@@ -452,17 +453,29 @@ class NotebookConverter:
 
     def render_code_cell(self, cell: Any, cell_index: int) -> str:
         source = as_text(cell.get("source", ""))
+        execution_count = cell.get("execution_count")
         if self.config.include_execution_count:
-            count = cell.get("execution_count")
-            if count is not None:
-                source = f"# In[{count}]:\n{source}"
+            if execution_count is not None:
+                source = f"# In[{execution_count}]:\n{source}"
         pieces = [fence_block(source, self.config.code_fence_language)]
         if self.config.include_outputs:
             outputs = cell.get("outputs", []) or []
             rendered_outputs = self.renderer.render_outputs(outputs, cell_index)
             if rendered_outputs.strip():
-                pieces.append(rendered_outputs)
+                if self.config.output_style == "callout":
+                    pieces.append(self.format_output_callout(rendered_outputs, execution_count))
+                else:
+                    pieces.append(rendered_outputs)
         return "\n\n".join(pieces)
+
+    def format_output_callout(self, text: str, execution_count: Any) -> str:
+        title = "Output"
+        if self.config.include_execution_count and execution_count is not None:
+            title = f"{title} [{execution_count}]"
+        lines = [f"> [!nb-output] {title}"]
+        for line in text.splitlines():
+            lines.append(">" if line == "" else f"> {line}")
+        return "\n".join(lines)
 
     def render_raw_cell(self, cell: Any) -> str:
         if self.config.skip_raw:
@@ -500,6 +513,7 @@ def build_config(args: argparse.Namespace) -> Config:
         html_policy=args.html_policy,
         image_policy=args.image_policy,
         table_policy=args.table_policy,
+        output_style=args.output_style,
         overwrite=not args.no_overwrite,
         strict_mode=args.strict,
     )
@@ -516,6 +530,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--html-policy", choices=["auto", "convert", "keep", "asset"], default="auto")
     parser.add_argument("--image-policy", choices=["save", "inline_base64", "skip"], default="save")
     parser.add_argument("--table-policy", choices=["auto", "markdown", "html"], default="auto")
+    parser.add_argument(
+        "--output-style",
+        choices=["callout", "plain"],
+        default="callout",
+        help="Render code cell outputs as Obsidian callouts or preserve the old plain layout",
+    )
     parser.add_argument("--no-outputs", action="store_true", help="Do not include code cell outputs")
     parser.add_argument("--include-execution-count", action="store_true", help="Add execution count comments above code")
     parser.add_argument("--cell-separators", action="store_true", help="Insert HTML comments between cells")
